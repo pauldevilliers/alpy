@@ -22,12 +22,36 @@ COOKIE_SECURE=os.getenv("ALPY_COOKIE_SECURE","true").lower()=="true"
 docker_client=docker.from_env()
 http=None
 
-LOGIN="""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alpy</title><style>
+LOGIN="""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alpy</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f12"><style>
 *{box-sizing:border-box}body{margin:0;background:#0d0f12;color:#f5f7fa;font-family:system-ui;display:grid;place-items:center;min-height:100vh}
 .c{width:min(430px,calc(100vw - 32px));padding:38px;border:1px solid #272b31;border-radius:22px;background:#14171b}
 h1{font-size:48px;margin:0 0 8px}.s{color:#9da5b0;margin:0 0 28px;line-height:1.5}input,button{width:100%;height:52px;border-radius:12px;font-size:16px}
 input{background:#0d0f12;color:#fff;border:1px solid #343a42;padding:0 16px}button{margin-top:12px;border:0;background:#f4f4f4;color:#111;font-weight:750;cursor:pointer}
-small{display:block;color:#727a84;margin-top:18px;line-height:1.5}</style></head><body><main class="c"><h1>Alpy</h1><p class="s">Your Linux workspace lives online.<br>Enter your email for a secure sign-in link.</p><form method="post" action="/auth/request"><input name="email" type="email" autocomplete="email" required placeholder="you@example.com"><button>Send magic link</button></form><small>No password. Each link expires and works only once.</small></main></body></html>"""
+small{display:block;color:#727a84;margin-top:18px;line-height:1.5}</style></head><body><main class="c"><h1>Alpy</h1><p class="s">Your Linux workspace lives online.<br>Enter your email for a secure sign-in link.</p><form method="post" action="/auth/request"><input name="email" type="email" autocomplete="email" required placeholder="you@example.com"><button>Send magic link</button></form><small>No password. Each link expires and works only once.</small></main><script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(()=>{});}</script></body></html>"""
+MANIFEST='''{
+  "name": "Alpy",
+  "short_name": "Alpy",
+  "description": "Your portable cloud Linux workspace",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}'''
+SERVICE_WORKER='''const CACHE="alpy-shell-v1";
+self.addEventListener("install",e=>{self.skipWaiting();});
+self.addEventListener("activate",e=>{e.waitUntil(self.clients.claim());});
+self.addEventListener("fetch",e=>{if(e.request.mode==="navigate"){e.respondWith(fetch(e.request).catch(()=>new Response("<!doctype html><title>Alpy offline</title><style>body{font-family:system-ui;background:#0d0f12;color:white;display:grid;place-items:center;min-height:100vh}div{text-align:center}p{color:#999}</style><div><h1>Alpy needs the internet</h1><p>Reconnect and try again.</p></div>",{headers:{"Content-Type":"text/html"}})));}});'''
+ICON_SVG='''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0d0f12"/><path d="M116 366 231 114h50l115 252h-62l-24-58H200l-24 58h-60Zm106-111h66l-33-82-33 82Z" fill="#fff"/></svg>'''
+
 CHECK="""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Check email - Alpy</title><style>body{margin:0;background:#0d0f12;color:#fff;font-family:system-ui;display:grid;place-items:center;min-height:100vh}.c{width:min(460px,calc(100vw - 32px));padding:38px;border:1px solid #272b31;border-radius:22px;background:#14171b}p{color:#aab1bb;line-height:1.6}a{color:#fff}</style></head><body><div class="c"><h1>Check your email</h1><p>Alpy has sent a one-time sign-in link.</p><p><a href="/login">Use another email</a></p></div></body></html>"""
 
 def db():
@@ -89,6 +113,15 @@ def send_magic(to,link):
         with smtplib.SMTP_SSL(SMTP_HOST,SMTP_PORT,timeout=20) as s:
             if SMTP_USER: s.login(SMTP_USER,SMTP_PASSWORD)
             s.send_message(m)
+
+async def manifest(request):
+    return web.Response(text=MANIFEST,content_type="application/manifest+json")
+
+async def service_worker(request):
+    return web.Response(text=SERVICE_WORKER,content_type="application/javascript",headers={"Service-Worker-Allowed":"/","Cache-Control":"no-cache"})
+
+async def icon(request):
+    return web.Response(text=ICON_SVG,content_type="image/svg+xml")
 
 async def login(request):
     if user_for(request): raise web.HTTPFound("/")
@@ -163,6 +196,6 @@ async def stop(app):
     if http: await http.close()
 
 app=web.Application(client_max_size=128*1024*1024)
-app.router.add_get("/login",login); app.router.add_post("/auth/request",request_magic); app.router.add_get("/auth/verify",verify); app.router.add_get("/logout",logout)
+app.router.add_get("/manifest.webmanifest",manifest); app.router.add_get("/sw.js",service_worker); app.router.add_get("/icon.svg",icon); app.router.add_get("/login",login); app.router.add_post("/auth/request",request_magic); app.router.add_get("/auth/verify",verify); app.router.add_get("/logout",logout)
 app.router.add_route("*","/{tail:.*}",proxy); app.on_startup.append(start); app.on_cleanup.append(stop)
 web.run_app(app,host="0.0.0.0",port=8080)
