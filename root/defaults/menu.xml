@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+  <menu id="root-menu" label="Alpy">
+    <item label="Terminal"><action name="Execute"><command>xfce4-terminal --working-directory=/config</command></action></item>
+    <item label="Files"><action name="Execute"><command>thunar /config</command></action></item>
+    <item label="Web"><action name="Execute"><command>chromium-browser --no-sandbox</command></action></item>
+    <separator/>
+    <item label="Projects"><action name="Execute"><command>thunar /config/Projects</command></action></item>
+    <item label="Documents"><action name="Execute"><command>thunar /config/Documents</command></action></item>
+    <separator/>
+    <item label="Restart desktop"><action name="Restart"/></item>
+  </menu>
+</openbox_menu>
