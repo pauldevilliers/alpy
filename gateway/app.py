@@ -1,4 +1,4 @@
-import asyncio, hashlib, html, os, secrets, smtplib, sqlite3, ssl, time, uuid
+import asyncio, base64, hashlib, hmac, html, os, secrets, smtplib, sqlite3, ssl, time, uuid
 from email.message import EmailMessage
 from urllib.parse import quote
 import docker
@@ -7,7 +7,7 @@ from aiohttp import ClientSession, WSMsgType, web
 DB_PATH=os.getenv("ALPY_DB","/state/alpy.db")
 BASE_URL=os.getenv("ALPY_BASE_URL","http://localhost:8080").rstrip("/")
 ALPY_IMAGE=os.getenv("ALPY_IMAGE","alpy-desktop:local")
-NETWORK=os.getenv("ALPY_DOCKER_NETWORK","alpy-net")
+NETWORK=os.getenv("ALPY_DOCKER_NETWORK","alpy-net")\nINTERNAL_SECRET=os.getenv("ALPY_INTERNAL_SECRET","")
 MAGIC_MINUTES=int(os.getenv("ALPY_MAGIC_MINUTES","10"))
 SESSION_DAYS=int(os.getenv("ALPY_SESSION_DAYS","30"))
 SMTP_HOST=os.getenv("SMTP_HOST","")
@@ -38,6 +38,13 @@ def db():
     c.commit(); return c
 
 def h(v): return hashlib.sha256(v.encode()).hexdigest()
+def internal_password(uid):
+    if not INTERNAL_SECRET:
+        raise RuntimeError("ALPY_INTERNAL_SECRET is not configured")
+    return hmac.new(INTERNAL_SECRET.encode(),uid.encode(),hashlib.sha256).hexdigest()
+def upstream_auth(uid):
+    raw=f"alpy:{internal_password(uid)}".encode()
+    return "Basic "+base64.b64encode(raw).decode()
 def clean_email(v):
     v=(v or "").strip().lower()
     return v if "@" in v and "." in v.rsplit("@",1)[-1] and len(v)<=254 else None
@@ -62,7 +69,7 @@ def workspace(user):
         if c.status!="running": c.start()
     except docker.errors.NotFound:
         c=docker_client.containers.run(ALPY_IMAGE,detach=True,name=name,hostname="alpy",
-            environment={"TITLE":"Alpy","CUSTOM_USER":"alpy","PASSWORD":secrets.token_urlsafe(32),"NO_DECOR":"1","NO_FULL":"1","FM_HOME":"/config","ALPY_USER_ID":uid,"ALPY_EMAIL":user["email"]},
+            environment={"TITLE":"Alpy","CUSTOM_USER":"alpy","PASSWORD":internal_password(uid),"NO_DECOR":"1","NO_FULL":"1","FM_HOME":"/config","ALPY_USER_ID":uid,"ALPY_EMAIL":user["email"]},
             volumes={volume:{"bind":"/config","mode":"rw"}},network=NETWORK,shm_size="1g",
             restart_policy={"Name":"unless-stopped"},labels={"alpy.user_id":uid})
     return name
