@@ -7,7 +7,8 @@ from aiohttp import ClientSession, WSMsgType, web
 DB_PATH=os.getenv("ALPY_DB","/state/alpy.db")
 BASE_URL=os.getenv("ALPY_BASE_URL","http://localhost:8080").rstrip("/")
 ALPY_IMAGE=os.getenv("ALPY_IMAGE","alpy-desktop:local")
-NETWORK=os.getenv("ALPY_DOCKER_NETWORK","alpy-net")\nINTERNAL_SECRET=os.getenv("ALPY_INTERNAL_SECRET","")
+NETWORK=os.getenv("ALPY_DOCKER_NETWORK","alpy-net")
+INTERNAL_SECRET=os.getenv("ALPY_INTERNAL_SECRET","")
 MAGIC_MINUTES=int(os.getenv("ALPY_MAGIC_MINUTES","10"))
 SESSION_DAYS=int(os.getenv("ALPY_SESSION_DAYS","30"))
 SMTP_HOST=os.getenv("SMTP_HOST","")
@@ -137,6 +138,7 @@ async def proxy(request):
     if request.headers.get("Upgrade","").lower()=="websocket":
         client=web.WebSocketResponse(); await client.prepare(request)
         headers={k:v for k,v in request.headers.items() if k.lower() not in HOP}
+        headers["Authorization"]=upstream_auth(user["id"])
         async with http.ws_connect(target,headers=headers) as upstream:
             async def a():
                 async for m in client:
@@ -149,6 +151,7 @@ async def proxy(request):
             await asyncio.gather(a(),b())
         return client
     headers={k:v for k,v in request.headers.items() if k.lower() not in HOP}
+    headers["Authorization"]=upstream_auth(user["id"])
     async with http.request(request.method,target,headers=headers,data=await request.read(),allow_redirects=False) as r:
         body=await r.read(); out={k:v for k,v in r.headers.items() if k.lower() not in HOP and k.lower()!="content-length"}
         return web.Response(body=body,status=r.status,headers=out)
