@@ -68,7 +68,7 @@ public sealed class MainForm : Form
             _web.CoreWebView2?.Reload();
             e.SuppressKeyPress = true;
         }
-        else if (e.Control && e.Oemcomma)
+        else if (e.Control && e.KeyCode == Keys.Oemcomma)
         {
             ChangeServer();
             e.SuppressKeyPress = true;
