@@ -1,0 +1,2 @@
+xsetroot -solid "#111111" &
+xfce4-terminal --maximize --title="Alpy" --working-directory=/config &
