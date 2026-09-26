@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bash
+set -e
+mkdir -p /config/.config/openbox /config/.config/alpy /config/Desktop /config/Projects /config/Documents /config/Downloads
+[ -f /config/.config/openbox/autostart ] || cp /defaults/autostart /config/.config/openbox/autostart
+[ -f /config/.config/openbox/menu.xml ] || cp /defaults/menu.xml /config/.config/openbox/menu.xml
+[ -f /config/.config/alpy/welcome.html ] || cp /defaults/welcome.html /config/.config/alpy/welcome.html
