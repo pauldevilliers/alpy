@@ -26,6 +26,8 @@ cd "$TARGET"
 
 if [ ! -f .env ]; then
   cp .env.example .env
+  SECRET="$(openssl rand -hex 32)"
+  sed -i "s/replace-with-a-long-random-secret/$SECRET/" .env
   echo
   echo "Created $TARGET/.env"
   echo "Edit it before production use:"
