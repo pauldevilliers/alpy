@@ -1,0 +1,54 @@
+name: Build Alpy Windows Installer
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "windows/AlpyLauncher/**"
+      - "windows/installer/**"
+      - ".github/workflows/windows-installer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore windows/AlpyLauncher/AlpyLauncher.csproj
+
+      - name: Publish launcher
+        run: >
+          dotnet publish windows/AlpyLauncher/AlpyLauncher.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o windows/publish
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup -y --no-progress
+
+      - name: Build Setup.exe
+        shell: powershell
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "windows\installer\Alpy.iss"'
+
+      - name: Upload AlpySetup.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlpySetup
+          path: dist/AlpySetup.exe
+          if-no-files-found: error
