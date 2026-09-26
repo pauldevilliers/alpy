@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Alpy Web</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="desktop" class="desktop" tabindex="0" aria-label="Alpy Web desktop">
+  <div class="desktop-mark">ALPY WEB</div>
+
+  <div id="windows" class="windows" aria-live="polite"></div>
+
+  <div id="launcher" class="launcher hidden" role="menu" aria-label="Applications">
+    <div class="launcher-head">
+      <div>
+        <div class="launcher-title">Alpy</div>
+        <div class="launcher-sub">web workspace</div>
+      </div>
+      <button class="icon-button" id="launcherClose" aria-label="Close menu">×</button>
+    </div>
+    <input id="launcherSearch" class="launcher-search" placeholder="Search apps…" autocomplete="off">
+    <div id="launcherApps" class="launcher-apps"></div>
+    <div class="launcher-foot">
+      <button class="launcher-foot-btn" data-action="settings">Settings</button>
+      <button class="launcher-foot-btn" data-action="lock">Lock</button>
+    </div>
+  </div>
+
+  <div class="dock">
+    <button id="menuButton" class="menu-button" aria-label="Open Alpy menu">
+      <span class="menu-dot"></span>
+      <span>Alpy</span>
+    </button>
+    <div id="runningApps" class="running-apps"></div>
+    <div class="dock-spacer"></div>
+    <button id="clock" class="clock" title="Clock"></button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
