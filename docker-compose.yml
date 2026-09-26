@@ -1,0 +1,20 @@
+services:
+  alpy:
+    build: .
+    container_name: alpy
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/London}
+      - TITLE=Alpy
+      - CUSTOM_USER=${ALPY_USER:-alpy}
+      - PASSWORD=${ALPY_PASSWORD:-change-me-now}
+      - NO_DECOR=1
+      - NO_FULL=1
+      - FM_HOME=/config
+    volumes:
+      - ./data:/config
+    ports:
+      - "127.0.0.1:3000:3000"
+    shm_size: "1gb"
