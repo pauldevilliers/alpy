@@ -1,20 +1,32 @@
 services:
-  alpy:
-    build: .
-    container_name: alpy
+  gateway:
+    build: ./gateway
+    container_name: alpy-gateway
     restart: unless-stopped
     environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
-      - TZ=${TZ:-Europe/London}
-      - TITLE=Alpy
-      - CUSTOM_USER=${ALPY_USER:-alpy}
-      - PASSWORD=${ALPY_PASSWORD:-change-me-now}
-      - NO_DECOR=1
-      - NO_FULL=1
-      - FM_HOME=/config
+      - ALPY_BASE_URL=${ALPY_BASE_URL}
+      - ALPY_IMAGE=alpy-desktop:local
+      - ALPY_DOCKER_NETWORK=alpy-net
+      - ALPY_MAGIC_MINUTES=${ALPY_MAGIC_MINUTES:-10}
+      - ALPY_SESSION_DAYS=${ALPY_SESSION_DAYS:-30}
+      - ALPY_COOKIE_SECURE=${ALPY_COOKIE_SECURE:-true}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_TLS=${SMTP_TLS:-true}
     volumes:
-      - ./data:/config
+      - /var/run/docker.sock:/var/run/docker.sock
+      - alpy-auth:/state
     ports:
-      - "127.0.0.1:3000:3000"
-    shm_size: "1gb"
+      - "127.0.0.1:8080:8080"
+    networks:
+      - alpy-net
+
+volumes:
+  alpy-auth:
+
+networks:
+  alpy-net:
+    name: alpy-net
